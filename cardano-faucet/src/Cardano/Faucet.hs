@@ -300,9 +300,9 @@ newFaucetState fsConfig fsTxQueue = do
     fsNetwork = fcfNetwork fsConfig
 
   shelleyAddress <-
-    withExceptT FaucetErrorTodo2 $
-      runInCIO () $
-          buildShelleyAddress (Key.castVerificationKey pay_vkey) Nothing fsNetwork
+    withExceptT FaucetErrorTodo2
+      $ runInCIO ()
+      $ buildShelleyAddress (Key.castVerificationKey pay_vkey) Nothing fsNetwork
 
   let fsOwnAddress = Api.AddressShelley shelleyAddress
 

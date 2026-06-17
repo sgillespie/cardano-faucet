@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
@@ -270,8 +271,8 @@ getOptionalMintOutput sbe fs (FaucetValueMultiAsset _ (FaucetMintToken (policy_i
           TokenState {tsAssetId, tsPolicyId, tsSimpleScript, tsPolicySKey} = getTokenState policy_index name fs
 
         assetName <- case tsAssetId of
-            AdaAssetId -> left $ FaucetWebErrorTodo "Not a multi asset"
-            AssetId _ assetName -> pure assetName
+          AdaAssetId -> left $ FaucetWebErrorTodo "Not a multi asset"
+          AssetId _ assetName -> pure assetName
 
         let
           assets = PolicyAssets $ Map.fromList [(assetName, quant)]
@@ -279,7 +280,7 @@ getOptionalMintOutput sbe fs (FaucetValueMultiAsset _ (FaucetMintToken (policy_i
           valueToMint = valueFromList [(tsAssetId, quant)]
 
         pure
-          (valueToMint
+          ( valueToMint
           , TxMintValue maryOnwards (Map.fromList [(tsPolicyId, (assets, witnessProvided))])
           , [WitnessPaymentExtendedKey tsPolicySKey]
           )
@@ -309,8 +310,8 @@ mintFreshTokens sbe fs@FaucetState {fsUtxoTMVar, fsPaymentSkey, fsOwnAddress} po
           Just yes -> pure yes
           Nothing -> left $ FaucetWebErrorTodo "scripts not supported"
         assetName <- case tsAssetId of
-            AdaAssetId -> left $ FaucetWebErrorTodo "Not a multi asset"
-            AssetId _ assetName -> pure assetName
+          AdaAssetId -> left $ FaucetWebErrorTodo "Not a multi asset"
+          AssetId _ assetName -> pure assetName
         let
           quant = Quantity (count * tx_out_count)
           witnessProvided = BuildTxWith $ SimpleScriptWitness languageSupportedInEra (SScript tsSimpleScript)
@@ -413,13 +414,18 @@ handleDelegateStake
         Right ((stake_skey, creds), txinout) -> do
           let
             poolKeyHash :: L.KeyHash L.StakePool = unStakePoolKeyHash poolId
-            expCert = caseShelleyToBabbageOrConwayEraOnwards
-                (\_ ->
-                  let ledgerCert = L.mkDelegStakeTxCert (toShelleyStakeCredential creds) (unStakePoolKeyHash poolId)
-                  in ExpCert.Certificate ledgerCert)
-                (\_ ->
-                  let ledgerCert = L.mkDelegTxCert (toShelleyStakeCredential creds) (L.DelegStake poolKeyHash)
-                  in ExpCert.Certificate ledgerCert)
+            expCert =
+              caseShelleyToBabbageOrConwayOrDijkstra
+                ( \_ ->
+                    let ledgerCert = L.mkDelegStakeTxCert (toShelleyStakeCredential creds) (unStakePoolKeyHash poolId)
+                     in ExpCert.Certificate ledgerCert
+                )
+                ( \case
+                    ConwayEraOnwardsConway ->
+                      ExpCert.Certificate $ L.mkDelegTxCert (toShelleyStakeCredential creds) (L.DelegStake poolKeyHash)
+                    ConwayEraOnwardsDijkstra ->
+                      ExpCert.Certificate $ L.mkDelegTxCert (toShelleyStakeCredential creds) (L.DelegStake poolKeyHash)
+                )
                 sbe
             stake_witness = WitnessStakeExtendedKey stake_skey
           (signedTx, txid) <-
@@ -464,9 +470,9 @@ attributesToString map' = if Map.null map' then "" else wrapped
   where
     wrapped = "{" <> joinedAttrs <> "}"
     joinedAttrs =
-      T.intercalate "," $
-        Map.elems $
-          Map.mapWithKey (\key val -> key <> "=\"" <> valToString val <> "\"") map'
+      T.intercalate ","
+        $ Map.elems
+        $ Map.mapWithKey (\key val -> key <> "=\"" <> valToString val <> "\"") map'
 
 toMetric :: Metric -> Text
 toMetric (Metric attribs key val) = key <> attributesToString attribs <> " " <> valToString val
@@ -641,8 +647,8 @@ handleSendMoney sbe fs@FaucetState {fsUtxoTMVar, fsPaymentSkey, fsTxQueue, fsCon
         (Fee feeLovelace)
     putStrLn $ format ("txin is worth: " % sh) txInValue
     putStrLn $ format ("user should receive: " % sh) valueUserShouldReceive
-    putStrLn $
-      format
+    putStrLn
+      $ format
         (sh % ": sending funds to address " % st % " via txid " % sh)
         clientIP
         (serialiseAddress addressAny)
@@ -667,8 +673,8 @@ logRejectedApiKey ip (Just attempted) =
 
 logError :: IPv6 -> FaucetWebError -> IO ()
 logError ip (FaucetWebErrorRateLimitExeeeded secs addr) =
-  putStrLn $
-    format (sh % ": rate limit exeeded for " % t % " will reset in " % sh) ip (LT.fromStrict addr) secs
+  putStrLn
+    $ format (sh % ": rate limit exeeded for " % t % " will reset in " % sh) ip (LT.fromStrict addr) secs
 logError ip (FaucetWebErrorInvalidAddress addr _) = putStrLn $ format (sh % ": invalid cardano address: " % t) ip (LT.fromStrict addr)
 logError ip FaucetWebErrorInvalidApiKey = putStrLn $ format (sh % ": invalid api key") ip
 logError ip (FaucetWebErrorUtxoNotFound value) = putStrLn $ format (sh % ": faucet out of funds for: " % sh) ip value
