@@ -36,7 +36,7 @@ import Cardano.Api.Byron ()
 import Cardano.Api.Ledger qualified as L
 import Cardano.Api.Network.IPC (LocalTxMonitorClient (..))
 import Cardano.Api.Network (NetworkId)
-import Cardano.Api.Certificate (PoolId)
+import Cardano.Api.Experimental.Certificate (PoolId)
 import Cardano.Api.Key (StakeExtendedKey)
 import Cardano.Api.Key qualified as Key
 import Cardano.Api.Block (SlotNo)

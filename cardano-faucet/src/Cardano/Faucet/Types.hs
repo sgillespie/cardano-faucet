@@ -78,8 +78,8 @@ import Cardano.Api (
   docToText,
  )
 import Cardano.Api.Address (StakeCredential, StakeExtendedKey)
-import Cardano.Api.Certificate (PoolId)
 import Cardano.Api.Ledger qualified as L
+import Cardano.Api.Experimental.Certificate (PoolId)
 import Cardano.Api.Network (NetworkId (Mainnet, Testnet), NetworkMagic (NetworkMagic))
 import Cardano.Api.Tx (ShelleyWitnessSigningKey)
 import Cardano.Api.Value (AssetName (..))
