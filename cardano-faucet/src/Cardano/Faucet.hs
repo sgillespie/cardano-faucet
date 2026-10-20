@@ -57,6 +57,8 @@ import Cardano.Faucet.Types (
   parseConfig,
   renderFaucetError,
   rootKeytoAcctKey,
+  toPaymentSigningKey,
+  toStakeSigningKey,
  )
 import Cardano.Faucet.Utils
 import Cardano.Faucet.Web
@@ -292,7 +294,7 @@ newFaucetState fsConfig fsTxQueue = do
   let
     fsAcctKey = rootKeytoAcctKey fsRootKey 0x80000000
     addrK = accountKeyToPaymentKey fsAcctKey (fcfAddressIndex fsConfig)
-    pay_skey = Api.PaymentExtendedSigningKey $ getKey addrK
+    pay_skey = toPaymentSigningKey $ getKey addrK
     pay_vkey = Api.getVerificationKey pay_skey
     fsPaymentSkey = Api.WitnessPaymentExtendedKey pay_skey
     fsPaymentVkey = pay_vkey
@@ -457,7 +459,7 @@ deriveSingleKey ::
 deriveSingleKey net acctK stakeIndex = (stake_skey, y, x)
   where
     stakeK = accountKeyToStakeKey acctK stakeIndex
-    stake_skey = Key.StakeExtendedSigningKey $ getKey stakeK
+    stake_skey = toStakeSigningKey $ getKey stakeK
     stake_vkey = Api.getVerificationKey stake_skey
     stake_vkey_hash = Key.verificationKeyHash $ Key.castVerificationKey stake_vkey
     y = StakeCredentialByKey stake_vkey_hash
