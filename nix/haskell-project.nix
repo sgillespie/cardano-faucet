@@ -61,9 +61,7 @@
           liburing # For ouroboros-consensus' LSM backend
         ];
 
-        # disable Hoogle until someone request it
-        # Disabled: GHC 9.6.7 haddock panics on ouroboros-network-1.1.0.0 BigLedgerPeers
-        withHoogle = false;
+        withHoogle = true;
       };
 
       # package customizations as needed. Where cabal.project is not
@@ -71,6 +69,24 @@
       modules = [
         {
           packages.cardano-faucet.configureFlags = ["--ghc-option=-Werror"];
+        }
+
+        {
+          # GHC 9.6.7 panics when building Haddock docs for some Cardano packages, so 
+          # disable it for now:
+          #
+          # panic! (the 'impossible' happened)
+          #   GHC version 9.6.7:
+          #         tyConStupidTheta
+          # 
+          # BigLedgerPeers
+          # Call stack:
+          #     CallStack (from HasCallStack):
+          #       callStackDoc, called at compiler/GHC/Utils/Panic.hs:189:37 in ghc:GHC.Utils.Panic
+          #       pprPanic, called at compiler/GHC/Core/TyCon.hs:2649:17 in ghc:GHC.Core.TyCon
+          packages.cardano-diffusion.doHaddock = false;
+          packages.ouroboros-network.doHaddock = false;
+          packages.cardano-ledger-shelley.doHaddock = false;
         }
       ];
     };
