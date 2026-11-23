@@ -95,6 +95,18 @@
           packages.ouroboros-network.doHaddock = false;
           packages.cardano-ledger-shelley.doHaddock = false;
         }
+
+        ({pkgs, ...}: let
+          inherit (pkgs.buildPackages) protobuf;
+        in {
+          # Add `protoc` to $PATH. Fixes the following build error:
+          #
+          #     Error: couldn't find the executable "protoc" in your $PATH.
+          #         Follow the installation instructions at
+          #         https://google.github.io/proto-lens/installing-protoc.html .
+          packages.proto-lens-protobuf-types.components.library.build-tools = [protobuf];
+          packages.cardano-rpc.components.library.build-tools = [protobuf];
+        })
       ];
     };
 
